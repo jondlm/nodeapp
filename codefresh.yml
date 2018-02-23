@@ -1,0 +1,42 @@
+version: '1.0'
+steps:
+  build_image:
+    title: Building Docker Image
+    type: build
+    image_name: jondlm/nodeapp
+    working_directory: ./
+    dockerfile: Dockerfile
+    tag: '${{CF_BRANCH_TAG_NORMALIZED}}'
+  unit_test:
+    title: Running Unit Tests
+    image: '${{build_image}}'
+    working_directory: IMAGE_WORK_DIR
+    commands:
+      - npm test
+    on_success:
+      metadata:
+        set:
+          - '${{build_image.imageId}}':
+              - CF_QUALITY: true
+    on_fail:
+      metadata:
+        set:
+          - '${{build_image.imageId}}':
+              - CF_QUALITY: false
+  push_image:
+    title: Pushing to Docker Registry
+    type: push
+    candidate: '${{build_image}}'
+    tag: '${{CF_BRANCH_TAG_NORMALIZED}}'
+    registry: cfcr
+  deploy:
+    title: Running Deploy Script
+    type: deploy
+    kind: kubernetes
+    cluster: cluster-1@My Project
+    namespace: default
+    when:
+      branch:
+        only:
+          - master
+    file_path: ./kubernetes.yaml
