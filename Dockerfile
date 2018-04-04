@@ -16,6 +16,8 @@ RUN yarn install --pure-lockfile
 # Copy all app files, respecting the `.dockerignore` file
 COPY . .
 
+RUN true
+
 EXPOSE 80
 ENV NODE_ENV=production
 
